@@ -16,6 +16,19 @@ class ProcessOutputThread(Thread):
             self.conn.sendall(self.process.stdout.readline())
 
 
+class MathServerCommunicationThread(Thread):
+    def __init__(self,process,conn):
+        Thread.__init__(self)
+        self.process=process
+        self.conn=conn
+    def run():
+        #Connection and port forwarding 
+        print("{} Connecting with Back Port => {}".format(addr[0],addr[1]))
+        conn.sendall("You are Connected into Math Server . Please give some Math Expressions .....\n\n :> $\t".encode())
+        # get a bc command 
+        p=Popen(['bc'],stderr=STDOUT,stdin=PIPE,stdout=PIPE,shell=True)
+        t=Thread(target=ProcessOutputThread,args=(p,conn))
+        t.start()
 
 #initilize socket 
 
@@ -23,14 +36,9 @@ s= socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
 s.bind((HOST,PORT))
 s.listen()
-addr,conn=s.accept()
-#Connection and port forwarding 
-print("{} Connecting with Back Port => {} ".format(addr[0],addr[1]))
-print("You are Connected into Math Server . Please give some Math Expressions .....\n\n :> $\t")
-# get a bc command 
-p=Popen(['bc'],stderr=STDOUT,stdin=PIPE,stdout=PIPE,shell=True)
-t=Thread(target=ProcessOutputThread,args=(p,conn))
-t.start()
+while True:
+    conn,addr=s.accept()
+
 
 
 
