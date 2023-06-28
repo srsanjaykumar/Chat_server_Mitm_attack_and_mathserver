@@ -3,7 +3,7 @@ from threading import *
 from subprocess import PIPE , STDOUT ,Popen
 
 HOST=""
-PORT=7070
+PORT=7071
 
 def Start_new_math_thread(conn,addr):
     t=MathServerCommunicationThread(conn,addr)
@@ -20,7 +20,10 @@ class ProcessOutputThread(Thread):
         #we handle the exit and quit  input     
         # this thread will not closed so we check connection is closed ot not 
         while not self.process.stdout.closed and not self.conn._closed:
-            self.conn.sendall(self.process.stdout.readline())
+            try:
+                self.conn.sendall(self.process.stdout.readline())
+            except:
+                pass
 
 
 class MathServerCommunicationThread(Thread):
@@ -35,7 +38,7 @@ class MathServerCommunicationThread(Thread):
         # get a bc command 
         p=Popen(['bc'],stderr=STDOUT,stdin=PIPE,stdout=PIPE,shell=True)
         # call classes ini thread in proper way 
-        out=ProcessOutputThread(p,conn)
+        out=ProcessOutputThread(p,self.conn)
         out.start()
 
         while not p.stdout.closed:
@@ -43,18 +46,22 @@ class MathServerCommunicationThread(Thread):
             if not data:
                 break
             else:
-                data=data.decode()
-                query=data.strip()
-                if(query =="exit" or query == "quit"):
-                    # here process will be quit  
-                    #  we create a multiple instance of single process for each connection 
-                    p.communicate(query.encode(),timeout=1)
-                    if p.poll() is not None:
-                        break
-                query = query + "\n"
-                p.stdin.write(query.encode())
-                p.stdin.flush()
-
+                try:
+                    data=data.decode()
+                    query=data.strip()
+                    if(query =="exit" or query == "quit"):
+                        # here process will be quit  
+                        #  we create a multiple instance of single process for each connection 
+                        p.communicate(query.encode(),timeout=1)
+                        if p.poll() is not None:
+                            break
+                    query = query + "\n"
+                    p.stdin.write(query.encode())
+                    p.stdin.flush()
+                except:
+                    pass
+        # if connection is not close it will not exited  same like  line 22
+        self.conn.close()
 
 
 #initilize socket 
