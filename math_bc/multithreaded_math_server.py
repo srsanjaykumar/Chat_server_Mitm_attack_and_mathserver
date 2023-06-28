@@ -17,7 +17,9 @@ class ProcessOutputThread(Thread):
         self.conn=conn
     
     def run(self):
-        while not self.process.stdout.closed:
+        #we handle the exit and quit  input     
+        # this thread will not closed so we check connection is closed ot not 
+        while not self.process.stdout.closed and not self.conn._closed:
             self.conn.sendall(self.process.stdout.readline())
 
 
@@ -29,7 +31,7 @@ class MathServerCommunicationThread(Thread):
     def run(self):
         #Connection and port forwarding 
         print("{} Connecting with Back Port => {}".format(addr[0],addr[1]))
-        conn.sendall("You are Connected into Math Server . Please give some Math Expressions .....\n\n$".encode())
+        self.conn.sendall("You are Connected into Math Server . Please give some Math Expressions .....\n\n$".encode())
         # get a bc command 
         p=Popen(['bc'],stderr=STDOUT,stdin=PIPE,stdout=PIPE,shell=True)
         # call classes ini thread in proper way 
@@ -50,7 +52,7 @@ class MathServerCommunicationThread(Thread):
                 query = query + "\n"
                 p.stdin.write(query.encode())
                 p.stdin.flush()
-        s.close()
+
 
 
 #initilize socket 
@@ -64,7 +66,6 @@ while True:
     Start_new_math_thread(conn,addr)
 
 s.close()
-
 
 
 
