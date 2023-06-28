@@ -41,25 +41,28 @@ class MathServerCommunicationThread(Thread):
         out=ProcessOutputThread(p,self.conn)
         out.start()
 
-        while not p.stdout.closed:
-            data = conn.recv(1024)
-            if not data:
-                break
-            else:
-                try:
-                    data=data.decode()
-                    query=data.strip()
-                    if(query =="exit" or query == "quit"):
-                        # here process will be quit  
-                        #  we create a multiple instance of single process for each connection 
-                        p.communicate(query.encode(),timeout=1)
-                        if p.poll() is not None:
-                            break
-                    query = query + "\n"
-                    p.stdin.write(query.encode())
-                    p.stdin.flush()
-                except:
-                    pass
+        while not p.stdout.closed and not self.conn._closed:
+            try:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                else:
+                    try:
+                        data=data.decode()
+                        query=data.strip()
+                        if(query =="exit" or query == "quit"):
+                            # here process will be quit  
+                            #  we create a multiple instance of single process for each connection 
+                            p.communicate(query.encode(),timeout=1)
+                            if p.poll() is not None:
+                                break
+                        query = query + "\n"
+                        p.stdin.write(query.encode())
+                        p.stdin.flush()
+                    except:
+                        pass
+            except:
+                pass
         # if connection is not close it will not exited  same like  line 22
         self.conn.close()
 
