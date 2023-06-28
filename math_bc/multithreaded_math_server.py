@@ -47,6 +47,7 @@ class MathServerCommunicationThread(Thread):
                 query=data.strip()
                 if(query =="exit" or query == "quit"):
                     # here process will be quit  
+                    #  we create a multiple instance of single process for each connection 
                     p.communicate(query.encode(),timeout=1)
                     if p.poll() is not None:
                         break
