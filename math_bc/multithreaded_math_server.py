@@ -46,6 +46,7 @@ class MathServerCommunicationThread(Thread):
                 data=data.decode()
                 query=data.strip()
                 if(query =="exit" or query == "quit"):
+                    # here process will be quit  
                     p.communicate(query.encode(),timeout=1)
                     if p.poll() is not None:
                         break
