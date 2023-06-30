@@ -31,7 +31,7 @@ class ChatServerOutgoingThread(Thread):
             # connection is closed  we kill the thread 
             self.kill_Thread()
     
-    def kill_Thread(self):
+    def kill_Thread(self , should_inform=False):
         # inform others  that the user has disconnected 
         self.can_kill=True
     
@@ -84,10 +84,15 @@ class ChatServerIncomingThread(Thread):
     def killThread(self):
         self.can_kill=True
     
-    
+
     #  Run is the main part of thread if run is end the thread will closed 
     def run(self):
-        pass
+        while not self.conn._closed:
+            data = self.conn.recv(2048)
+            if not data: # means the clinent has disconnected 
+                # inform others when the client has disconnected 
+                self.incoming_thread.kill_Thread()
+                break 
 
 
 #  it can accept any interface connection 
@@ -110,7 +115,9 @@ print(sock._closed)
 # here we accept multiple connections 
 while not sock._closed:
     conn ,addr = sock.accept()
-
+    t = ChatServerIncomingThread(conn,addr) 
+    t.start()
+    threads.append(t)
 # final once we chack if socket is not closed we close the socket 
 if not sock._closed:
     sock.close()
