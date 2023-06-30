@@ -1,6 +1,6 @@
 import socket as s
 from threading import Thread
-
+from time import sleep
 """
 Goals : 
 ------------
@@ -12,14 +12,59 @@ Goals :
     6.Message length 1024 
 """
 
-class ChatServerThread(Thread):
+
+# Maintain active threads
+threads=[]
+class ChatServerOutgoingThread(Thread):
+    # we can access all the methods in IncomingThread Class  because we the object of incoming class 
+    def __init__(self,incoming_thread):
+        Thread.__init__(self)
+        self.incoming_thread=incoming_thread
+        self.messages=[]
+        self.can_kill=False
+
+    def sendMessage(self,message):
+        fMessage="{username} : {message} ".format(username=self.incoming_thread.getUserName(),message=message)
+        try:
+            self.incoming_thread.getConnection().sendall(fMessage.encode())
+        except:
+            # connection is closed  we kill the thread 
+            self.kill_Thread()
+    
+    def kill_Thread(self):
+        # inform others  that the user has disconnected 
+        self.can_kill=True
+    
+    def queueMessage(self,message):
+        self.messages.append(message)
+
+
+    
+    def run(self):
+        while True :
+            sleep(0.1) #100 milliseconds
+            if self.can_kill:
+                break # if loop breaks thread has been ended
+            if(len(self.messages)>0):
+                for message in self.messages:
+                    try:
+                        self.sendMessage(message)
+                    except:
+                        # inform Ohers clients has disconnected 
+                        break
+                
+    
+class ChatServerIncomingThread(Thread):
     def __init__(self,conn ,addr):
+        # initilize thread from here
         Thread.__init__(self)
         self.conn=conn
         self.addr=addr
         self.username=""
         self.user_ip=addr[0]
         self.user_port=addr[1]
+        self.incoming_thread=None
+        self.can_kill=False
     
     def setUserName(self,name):
         self.username=name
@@ -27,6 +72,20 @@ class ChatServerThread(Thread):
     def isClosed(self):
         return self.conn._closed
     
+    def getUserName(self):
+        return self.username
+    
+    def getConnection(self):
+        return self.conn
+    
+    def initSendMessageThread(self):
+        self.incoming_thread=ChatServerOutgoingThread(self)
+    
+    def killThread(self):
+        self.can_kill=True
+    
+    
+    #  Run is the main part of thread if run is end the thread will closed 
     def run(self):
         pass
 
@@ -51,8 +110,6 @@ print(sock._closed)
 # here we accept multiple connections 
 while not sock._closed:
     conn ,addr = sock.accept()
-
-
 
 # final once we chack if socket is not closed we close the socket 
 if not sock._closed:
